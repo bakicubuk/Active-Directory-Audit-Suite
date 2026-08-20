@@ -1,0 +1,21 @@
+# Üretilen raporlar (her çalıştırmada oluşur, repoya girmemeli)
+*.html
+AD_*.html
+AD_*.csv
+*.csv
+
+# GPO yedekleri (GPO-PolicyAnalyzer çıktısı)
+GPOBackups/
+GPO-PolicyAnalyzer/
+
+# Windows / editör artıkları
+Thumbs.db
+desktop.ini
+*.tmp
+~$*
+.vscode/
+.idea/
+
+# PowerShell transcript/log
+*.log
+transcript*.txt
