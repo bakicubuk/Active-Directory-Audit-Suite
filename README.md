@@ -313,7 +313,7 @@ Aşağıdaki eşleme rehber niteliğindedir.
 ## Depo yapısı
 
 ```
-AD-Assessment/
+Active-Directory-Audit-Suite/
 ├── Scripts/
 │   ├── AD-Overview.ps1
 │   ├── AD-Topology.ps1
