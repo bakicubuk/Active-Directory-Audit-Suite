@@ -27,7 +27,7 @@ seçtiğiniz çıktı klasörü dışında hiçbir yere yazılmaz.
 
 ## 1. Scriptler ne yapar
 
-Depoda `scripts/` klasörü altında altı bağımsız modül bulunur. Hepsini çalıştırmak zorunda
+Depoda `Scripts/` klasörü altında altı bağımsız modül bulunur. Hepsini çalıştırmak zorunda
 değilsiniz; her biri kendi başına anlamlı bir rapor üretir.
 
 | # | Script | Ne yapar | Ürettiği rapor |
@@ -35,7 +35,7 @@ değilsiniz; her biri kendi başına anlamlı bir rapor üretir.
 | 1 | **AD-Overview.ps1** | Forest'ın üst düzey özeti: forest/domain fonksiyonel seviyeleri, şema sürümü, FSMO rol sahipleri, tombstone lifetime; kullanıcı/bilgisayar/grup/OU/GPO sayıları; hesap durumu (etkin, devre dışı, eski, kilitli, parolası hiç dolmayan); bilgisayar OS dağılımı; grup dağılımı. | `AD_Overview_<tarih>.html` |
 | 2 | **AD-Topology.ps1** | Forest → domain → site → DC hiyerarşisini interaktif harita olarak çizer. FSMO rolleri, subnetler, site-link'ler, replikasyon sağlığı (`repadmin`/`dcdiag` mantığı), DC kaynak kullanımı; her DC sağlığına göre renklenir. | `AD_Topology_<tarih>.html` |
 | 3 | **AD-DCInventory.ps1** | Forest'taki her domain controller'ın envanteri: OS/build, IPv4, site, GC/RODC, uptime, erişilebilirlik; CIM/WMI ile donanım (üretici/model/BIOS, CPU, RAM, diskler, NIC'ler) ve performans (CPU/RAM kullanımı, NTDS.dit boyutu). | `AD_DCInventory_<tarih>.html` |
-| 4 | **AD-CredentialHygiene.ps1** | Parola/lockout politikası puanlaması, Fine-Grained Password Policy'ler (PSO), gMSA/sMSA managed account'lar, LAPS kapsamı, riskli hesaplar (parola süresiz, delegation, SID history, eski servis parolaları, SPN'ler), krbtgt parola yaşı. Kategoriler CSV olarak indirilebilir. | `AD_AccountSecurity_<tarih>.html` |
+| 4 | **AD-Credential.ps1** | Parola/lockout politikası puanlaması, Fine-Grained Password Policy'ler (PSO), gMSA/sMSA managed account'lar, LAPS kapsamı, riskli hesaplar (parola süresiz, delegation, SID history, eski servis parolaları, SPN'ler), krbtgt parola yaşı. Kategoriler CSV olarak indirilebilir. | `AD_AccountSecurity_<tarih>.html` |
 | 5 | **AD-TrustRelationships.ps1** | Her AD trust'ını keşfeder: yön, tip, transitivity; güvenlik durumu (SID filtering, selective authentication, TGT delegation, AES/SHA); yaş ve bağlantı testi. Riskleri türetir (örn. external trust'ta SID filtering kapalı → yüksek risk). | `AD_TrustRelationships_<tarih>.html` |
 | 6 | **GPO-PolicyAnalyzer.ps1** | Microsoft Policy Analyzer'ın manuel işini otomatikleştirir: her GPO'yu yedekler, ham `Registry.pol` + `GptTmpl.inf` dosyalarını ADMX/ADML ile anlaşılır policy isimlerine çözer ve tüm GPO'ları tek karşılaştırma tablosunda çakışmaları (conflict) işaretleyerek gösterir. | `GPO_PolicyAnalysis_<tarih>.html` + `GPOBackups/` |
 
@@ -86,10 +86,10 @@ Bilgisayarında **Git yüklüyse** en pratik yol budur (`git --version` çalış
 
 ```powershell
 # 1) Depoyu indir
-git clone https://github.com/<KULLANICI-ADIN>/AD-Assessment.git
+git clone https://github.com/bakicubuk/Active-Directory-Audit-Suite.git
 
 # 2) Klasöre gir
-cd AD-Assessment
+cd Active-Directory-Audit-Suite
 
 # 3) Bir modülü çalıştır (ExecutionPolicy'yi tek seferlik bypass ederek)
 powershell -ExecutionPolicy Bypass -File .\scripts\AD-Overview.ps1
@@ -106,18 +106,34 @@ powershell -ExecutionPolicy Bypass -File .\scripts\AD-Overview.ps1
 Git kurmak istemiyorsan:
 
 1. Depo sayfasında yeşil **`< > Code`** düğmesine tıkla → **Download ZIP**.
-2. İnen `AD-Assessment-main.zip` dosyasına **sağ tıkla → Properties (Özellikler)**.
+2. İnen **`Active-Directory-Audit-Suite-main.zip`** dosyasına **sağ tıkla → Properties (Özellikler)**.
    Altta **"Unblock / Engellemeyi kaldır"** kutusu varsa işaretle → **OK**.
-   *(İnternetten inen dosyalar "bloklanmış" gelir; bu adım scriptlerin çalışmasını engelleyen
-   uyarıyı kaldırır.)*
+   *(İnternetten inen dosyalar "bloklanmış" gelir. Bu adımı ayıklamadan ÖNCE yaparsan tek
+   tıklamayla ZIP içindeki bütün scriptler temiz çıkar; sonra yaparsan her dosya için ayrı
+   uğraşman gerekir.)*
 3. Sağ tıkla → **Extract All (Tümünü Ayıkla)**.
 4. **PowerShell'i yönetici olarak** aç, ayıkladığın klasöre gidip modülü çalıştır:
 
 ```powershell
 # Örnek: İndirilenler klasörüne ayıkladıysan
-cd "$env:USERPROFILE\Downloads\AD-Assessment-main"
+cd "$env:USERPROFILE\Downloads\Active-Directory-Audit-Suite-main"
 
-powershell -ExecutionPolicy Bypass -File .\scripts\AD-Overview.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\AD-Overview.ps1
+```
+
+**Klasör yolunu bilmiyorsan:** Dosya Gezgini'nde ayıkladığın klasörü aç, üstteki adres çubuğuna
+tıkla, tam yolu kopyala ve `cd "buraya yapıştır"` şeklinde kullan.
+
+**"Extract All" iç içe klasör oluşturduysa:** Windows varsayılan olarak
+`Active-Directory-Audit-Suite-main\Active-Directory-Audit-Suite-main` şeklinde iki katmanlı bir
+yapı çıkarabilir. `dir` komutuyla `Scripts` klasörünü göremiyorsan bir alt klasöre daha in.
+
+**2. adımı atladıysan (önce ayıkladın, sonra engeli kaldırmadın):** Scriptler
+`Security warning: Do you want to run...` uyarısı verir ya da hiç çalışmaz. Ayıkladığın klasörün
+içindeyken şu komutla hepsinin engelini tek seferde kaldır:
+
+```powershell
+Get-ChildItem -Path . -Recurse -File | Unblock-File
 ```
 
 **Klasör yolunu bilmiyorsan:** Dosya Gezgini'nde ayıkladığın klasörü aç, üstteki adres çubuğuna
@@ -126,32 +142,28 @@ tıkla, tam yolu kopyala ve `cd "buraya yapıştır"` şeklinde kullan.
 ### Tek tek çalıştırma komutları
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\AD-Overview.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\AD-Topology.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\AD-DCInventory.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\AD-CredentialHygiene.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\AD-TrustRelationships.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\GPO-PolicyAnalyzer.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\AD-Overview.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\AD-Topology.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\AD-DCInventory.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\AD-Credential.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\AD-TrustRelationships.ps1
+powershell -ExecutionPolicy Bypass -File .\Scripts\GPO-PolicyAnalyzer.ps1
 ```
 
 ### Raporları belirli bir klasöre toplamak
 
-```powershell
-# Önce klasörü oluştur, sonra hepsini oraya yönlendir
-New-Item -ItemType Directory C:\ADReports -Force
+powershell
+# Klasör yoksa scriptler kendisi oluşturur; yetki yoksa sebebini ekrana yazıp durur.
+.\Scripts\AD-Overview.ps1            -OutputPath C:\ADReports
+.\Scripts\AD-Topology.ps1            -OutputPath C:\ADReports
+.\Scripts\AD-DCInventory.ps1         -OutputPath C:\ADReports
+.\Scripts\AD-Credential.ps1          -OutputPath C:\ADReports
+.\Scripts\AD-TrustRelationships.ps1  -OutputPath C:\ADReports
+.\Scripts\GPO-PolicyAnalyzer.ps1     -OutputPath C:\ADReports
 
-.\scripts\AD-Overview.ps1            -OutputPath C:\ADReports
-.\scripts\AD-Topology.ps1            -OutputPath C:\ADReports
-.\scripts\AD-DCInventory.ps1         -OutputPath C:\ADReports
-.\scripts\AD-CredentialHygiene.ps1   -OutputPath C:\ADReports
-.\scripts\AD-TrustRelationships.ps1  -OutputPath C:\ADReports
-.\scripts\GPO-PolicyAnalyzer.ps1     -OutputPath C:\ADReports
-```
+Bloğun altına şu notu ekle:
 
-> **Not:** Scriptleri `C:\Windows\System32` içinden çalıştırmayın. "Yönetici olarak PowerShell"
-> varsayılan olarak orada açılır; önce `cd` ile scriptlerin bulunduğu klasöre geçin. (GPO modülü
-> bu durumu algılayıp çıktıyı `ProgramData` altına yönlendirir, ama yine de proje klasöründen
-> çalıştırmak en temizidir.)
+Not: C:\ köküne klasör oluşturmak yönetici yetkisi ister. PowerShell'i yönetici olarak açmadıysan script Output folder could not be created: C:\ADReports uyarısını verip durur ve rapor üretmez. Bu durumda PowerShell'i yönetici olarak aç ya da yazma yetkin olan bir klasör ver: -OutputPath "$env:USERPROFILE\Documents\ADReports".
 
 ---
 
@@ -161,30 +173,37 @@ Ortak parametreler tüm modüllerde bulunur; modüle özel olanlar ayrıca belir
 
 | Parametre | Modül(ler) | Açıklama | Varsayılan |
 |-----------|-----------|----------|-----------|
-| `-OutputPath <klasör>` | Tümü | HTML raporunun (ve varsa CSV/yedeklerin) yazılacağı klasör. | Geçerli dizin |
+| `-OutputPath <klasör>` | Tümü | HTML raporunun (ve varsa CSV/yedeklerin) yazılacağı klasör. Klasör yoksa oluşturulur; oluşturulamazsa sebebi ekrana yazılır ve rapor üretilmez. | Geçerli dizin |
 | `-OpenReport:$false` | Tümü | Bittiğinde raporu tarayıcıda otomatik açma. | Açar (`$true`) |
 | `-StaleDays <gün>` | Overview | Bir hesabın "eski (stale)" sayılması için gereken oturum-açmama süresi. | 180 |
+| `-ReplDelayIntraSiteHours <saat>` | Topology | Aynı site içindeki replikasyonun "gecikmiş" sayılacağı eşik. | 1 |
+| `-ReplDelayInterSiteHours <saat>` | Topology | Site'ler arası replikasyonun "gecikmiş" sayılacağı eşik. | 6 |
 | `-SkipHardware` | DCInventory | DC başına CIM/WMI donanım+performans toplamasını atla (daha hızlı). | Kapalı |
-| `-InactiveDays <gün>` | CredentialHygiene | Etkin kullanıcının pasif sayılacağı süre. | 90 |
-| `-StaleComputerDays <gün>` | CredentialHygiene | Bilgisayarın eski sayılacağı süre. | 90 |
-| `-ServiceAccountStalePasswordDays <gün>` | CredentialHygiene | Servis hesabı parolasının eski sayılacağı yaş. | 365 |
+| `-InactiveAccountDays <gün>` | Credential | Etkin bir kullanıcının pasif sayılacağı son oturum açma yaşı. | 90 |
+| `-StaleComputerDays <gün>` | Credential | Bilgisayarın eski sayılacağı süre. | 90 |
+| `-ServiceAccountStalePasswordDays <gün>` | Credential | Servis hesabı parolasının eski sayılacağı yaş. | 365 |
+| `-IncludeComputerAcls` | Credential | Bilgisayar nesnelerinin ACL analizini de dahil eder (büyük ortamlarda yavaşlatır). | Kapalı |
+| `-SkipOrphanedSids` | Credential | Sahipsiz (orphaned) SID taramasını atlar. | Tarar |
+| `-OrphanedSidSearchBase <DN>` | Credential | Sahipsiz SID taramasını belirli bir OU ile sınırlar. | Domain kökü |
 | `-TestConnectivity:$false` | TrustRelationships | Trust partner bağlantı testini atla. | Test eder |
-| `-ReplDelayInterSiteHours <saat>` | Topology | Site-ler arası replikasyonun "gecikmiş" sayılacağı eşik. | 6 |
 | `-SkipExport` | GPO-PolicyAnalyzer | GPO'ları yeniden yedekleme; mevcut `GPOBackups`'ı yeniden analiz et. | Yedekler |
 | `-GPONames "A","B"` | GPO-PolicyAnalyzer | Yalnızca belirtilen GPO'ları analiz et. | Tüm GPO'lar |
+| `-BackupPath <klasör>` | GPO-PolicyAnalyzer | GPO yedeklerinin yazılacağı klasör. | Geçerli dizin altında `GPOBackups` |
+| `-AdmxPath <klasör>` | GPO-PolicyAnalyzer | Policy isimlerini çözmek için kullanılacak ADMX/ADML klasörü. | Sistemin PolicyDefinitions klasörü |
+| `-AdmxLanguage <dil>` | GPO-PolicyAnalyzer | ADML dil klasörü. | `en-US` |
 
 **Örnekler:**
 
 ```powershell
 # Donanım toplamayı atlayarak hızlı DC envanteri
-.\scripts\AD-DCInventory.ps1 -SkipHardware
+.\Scripts\AD-DCInventory.ps1 -SkipHardware
 
 # Eski hesap eşiğini 90 güne düşürerek genel bakış
-.\scripts\AD-Overview.ps1 -StaleDays 90
+.\Scripts\AD-Overview.ps1 -StaleDays 90
 
 # GPO'ları bir kez yedekleyip sonra tekrar tekrar hızlı analiz
-.\scripts\GPO-PolicyAnalyzer.ps1
-.\scripts\GPO-PolicyAnalyzer.ps1 -SkipExport
+.\Scripts\GPO-PolicyAnalyzer.ps1
+.\Scripts\GPO-PolicyAnalyzer.ps1 -SkipExport
 ```
 
 ---
@@ -213,7 +232,7 @@ Raporlar bilgi verir; **karar ve düzeltme sizindir**. Aşağıdakiler tipik "k�
 - **Yüksek CPU/RAM kullanımı veya çok kısa uptime:** Kararsızlık işareti olabilir.
 - **"Unavailable" alanlar:** WinRM/DCOM erişimi yok demektir; güvenlik açığı değil, veri eksikliğidir.
 
-### AD-CredentialHygiene (en yoğun güvenlik modülü)
+### AD-Credential (en yoğun güvenlik modülü)
 - **Zayıf parola/lockout politikası puanı:** Baseline'ın altındaki her madde düzeltilmeli.
 - **krbtgt parola yaşı yüksek:** Golden Ticket riskini azaltmak için düzenli rotasyon (iki kez) yapın.
 - **Unconstrained delegation / SID history:** Yüksek riskli; iz sürüp kaldırın.
@@ -295,11 +314,11 @@ Aşağıdaki eşleme rehber niteliğindedir.
 
 ```
 AD-Assessment/
-├── scripts/
+├── Scripts/
 │   ├── AD-Overview.ps1
 │   ├── AD-Topology.ps1
 │   ├── AD-DCInventory.ps1
-│   ├── AD-CredentialHygiene.ps1
+│   ├── AD-Credential.ps1
 │   ├── AD-TrustRelationships.ps1
 │   └── GPO-PolicyAnalyzer.ps1
 ├── .gitignore
