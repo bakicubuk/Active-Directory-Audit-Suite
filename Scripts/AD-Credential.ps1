@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     AD Credential - Gelişmiş Dashboard
 .DESCRIPTION
@@ -13,8 +13,8 @@
       - FINE-GRAINED PASSWORD POLICY'LER (PSO'lar): her PSO, önceliği (precedence) ve kime uygulandığı.
       - MANAGED ACCOUNT'LAR: gMSA / sMSA, retrieval principal'ları, rotasyon aralığı, KDS root key.
       - LAPS: etkin bilgisayarlar genelinde Windows veya Legacy LAPS kapsamı (eksik / süresi dolmuş).
-      - RİSKLİ KULLANICI HESAPLARI: süresi hiç dolmayan, parola gerekli olmayan, unconstrained delegation, SID history, etkin ama pasif,
-        unconstrained delegation, SID history, etkin ama pasif hesaplar, eski servis parolaları, SPN'ler.
+      - RİSKLİ KULLANICI HESAPLARI: süresi hiç dolmayan, parola gerekli olmayan, unconstrained delegation, SID history,
+        etkin ama pasif hesaplar, eski servis parolaları, SPN'ler.
       - BİLGİSAYAR HESAPLARI: eski oturum açmalar, eski makine parolaları, legacy / kullanım ömrünü tamamlamış OS,
         unconstrained delegation, devre dışı nesneler.
       - krbtgt parola yaşı.
@@ -25,10 +25,16 @@
     HTML raporunun kaydedileceği klasör. Varsayılan olarak geçerli dizin kullanılır.
 .PARAMETER ServiceAccountStalePasswordDays
     Bir servis hesabının parolasının eski (stale) olarak işaretleneceği yaş (gün). Varsayılan 365.
-.PARAMETER InactiveDays
+.PARAMETER InactiveAccountDays
     Etkin bir KULLANICI hesabının pasif sayılacağı son oturum açma yaşı (gün). Varsayılan 90.
 .PARAMETER StaleComputerDays
     Etkin bir BİLGİSAYARIN eski (stale) sayılacağı son oturum açma yaşı (gün). Varsayılan 90.
+.PARAMETER IncludeComputerAcls
+    LAPS okuma delegasyonu taramasına bilgisayar nesnelerinin ACL'lerini de dahil eder (büyük ortamlarda yavaşlatır).
+.PARAMETER OrphanedSidSearchBase
+    Sahipsiz (orphaned) SID taramasını belirli bir DN ile sınırlar. Varsayılan domain kökü.
+.PARAMETER SkipOrphanedSids
+    Sahipsiz SID taramasını atlar.
 .PARAMETER OpenReport
     Tamamlandığında raporu aç (varsayılan: $true). Atlamak için -OpenReport:$false kullanın.
 .EXAMPLE
@@ -46,7 +52,6 @@
 param(
     [string]$OutputPath = (Get-Location).Path,
     [int]$ServiceAccountStalePasswordDays = 365,
-    [int]$InactiveDays = 90,
     [int]$StaleComputerDays = 90,
     [int]$InactiveAccountDays = 90,
     [switch]$IncludeComputerAcls,
@@ -339,7 +344,7 @@ try { $k=Get-ADUser 'krbtgt' -Properties pwdLastSet -ErrorAction Stop; $KrbtgtAg
 Write-Host "[7/8] Scanning computer accounts..." -ForegroundColor Yellow
 $Computers=@(); $cc_stale=0;$cc_oldpwd=0;$cc_legacy=0;$cc_deleg=0;$cc_disabled=0; $CompTotal=0
 try {
-    foreach ($c in (Get-ADComputer -Filter * -Properties OperatingSystem,lastLogonTimestamp,pwdLastSet,Enabled,TrustedForDelegation -ErrorAction Stop)) {
+    foreach ($c in (Get-ADComputer -Filter * -Properties OperatingSystem,lastLogonTimestamp,pwdLastSet,Enabled,TrustedForDelegation,PrimaryGroupID -ErrorAction Stop)) {
         $CompTotal++
         $llDays=Get-AgeDays (ConvertFrom-FileTimeSafe $c.lastLogonTimestamp)
         $pwDays=Get-AgeDays (ConvertFrom-FileTimeSafe $c.pwdLastSet)
@@ -347,13 +352,14 @@ try {
         $stale=($c.Enabled -and $llDays -ne $null -and $llDays -gt $StaleComputerDays)
         $oldpwd=($c.Enabled -and $pwDays -ne $null -and $pwDays -gt 90)
         $legacy=($os -match '2000|Windows XP|Server 2003|Server 2008|Windows 7|Windows 8|Server 2012|Vista')
-        $deleg=[bool]$c.TrustedForDelegation
+        $isDC=([int]$c.PrimaryGroupID -in 516,521)   # 516 = Domain Controllers, 521 = RODC
+        $deleg=([bool]$c.TrustedForDelegation -and -not $isDC)
         $disabled=(-not $c.Enabled)
         $f=@()
         if($stale){$f+="No logon in $llDays days";$cc_stale++}
         if($oldpwd){$f+="Machine password $pwDays days old";$cc_oldpwd++}
         if($legacy){$f+='Legacy / end-of-life OS';$cc_legacy++}
-        if($deleg){$f+='Unconstrained delegation (verify - DCs expected)';$cc_deleg++}
+        if($deleg){$f+='Unconstrained delegation (non-DC)';$cc_deleg++}
         if($disabled){$cc_disabled++}
         if($f.Count -gt 0 -or $disabled){
             $sev='low'
